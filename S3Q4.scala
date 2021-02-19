@@ -4,7 +4,7 @@ class GridMax(n: Int, xss: Array[Array[Int]]) {
     require(n >= 1 && xss.length == n && xss.forall(xs =>  xs.length == n))
 
     // channels for communication up and to the right
-    private val upChannels, rightChannels = Array.fill(n)(Array.fill(n)(OneOne[Int]))
+    private val upChannels, rightChannels = Array.fill(n)(Array.fill(n)(OneOneBuf[Int](1)))
 
     // output array
     private val outputArray = Array.fill(n)(Array.fill(n)(0))
@@ -46,7 +46,7 @@ class GridMax(n: Int, xss: Array[Array[Int]]) {
     // Run the system, and return array storing results obtained.
     def apply(): Array[Array[Int]] = {
         // create workers
-        val workers = || (for (i <- 0 until n; j <- 0 until n) yield worker(i, j, xss(i)(j), upChannels(i)(j), upChannels((i + 1) % n)(j), rightChannels(i)(j), rightChannels((i + 1) % n)(j)))
+        val workers = || (for (i <- 0 until n; j <- 0 until n) yield worker(i, j, xss(i)(j), upChannels(i)(j), upChannels((i + 1) % n)(j), rightChannels(i)(j), rightChannels(i)((j + 1) % n)))
         run (workers)
         outputArray
     }
