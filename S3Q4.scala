@@ -56,7 +56,7 @@ class LogGridMax(n: Int, xss: Array[Array[Int]]) {
     require(n >= 1 && xss.length == n && xss.forall(xs =>  xs.length == n))
 
     // channels for communication up and to the right
-    private val channels = Array.fill(n)(Array.fill(n)(ManyOneBuf[Int](1)))
+    private val channels = List.fill(n)(List.fill(n)(N2NBuf[Int](1, n*n, 1)))
 
     // output array
     private val outputArray = Array.fill(n)(Array.fill(n)(0))
@@ -83,7 +83,7 @@ class LogGridMax(n: Int, xss: Array[Array[Int]]) {
         }
         gap = 1
         // send up
-        while (count < n) {
+        while (gap < n) {
             // send value up
             write(i)((j + gap) % n)!(max)
             // receive value from below and update max
