@@ -1,7 +1,7 @@
 import io.threadcso._
 
-class GridMax(n: Int, xss: Array[Array[Int]]){
-    require(n >= 1 && xss.length == n && xss.forall( .length == n))
+class GridMax(n: Int, xss: Array[Array[Int]]) {
+    require(n >= 1 && xss.length == n && xss.forall(xs =>  xs.length == n))
 
     // channels for communication up and to the right
     private val upChannels, rightChannels = Array.fill(n)(Array.fill(n)(OneOne[Int]))
@@ -46,13 +46,7 @@ class GridMax(n: Int, xss: Array[Array[Int]]){
     // Run the system, and return array storing results obtained.
     def apply(): Array[Array[Int]] = {
         // create workers
-        val workers = (|| (
-        for (i <- 0 until n) {
-            for (j <- 0 until n) {
-                // create workers
-                yield worker(i, j, xss(i, j), upChannels(i, j), upChannels((i + 1) % n, j), rightChannels(i, j), rightChannels((i + 1) % n, j))
-            })
-        })
+        val workers = || (for (i <- 0 until n; j <- 0 until n) yield worker(i, j, xss(i)(j), upChannels(i)(j), upChannels((i + 1) % n)(j), rightChannels(i)(j), rightChannels((i + 1) % n)(j)))
         run (workers)
         outputArray
     }
@@ -67,7 +61,7 @@ object GridMaxTest{
   def doTest(useLog: Boolean) = {
     val n = 1+Random.nextInt(10)
     val xss = Array.fill[Int](n, n)(Random.nextInt(1000))
-    val results = if(useLog) new LogGridMax(n, xss)() else new GridMax(n, xss)()
+    val results = new GridMax(n, xss)() //if(useLog) new LogGridMax(n, xss)() else new GridMax(n, xss)()
     val expected = xss.map(_.max).max
     assert(results.forall(_.forall(_ == expected)))
   }
