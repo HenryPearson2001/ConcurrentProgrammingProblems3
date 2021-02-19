@@ -10,7 +10,7 @@ class resourceMonitor {
         total += id
     }
 
-    def exit(id: Int) {
+    def exit(id: Int) = synchronized {
         total -= id
         notifyAll()
     }
@@ -27,12 +27,10 @@ object resourceMonitorTest {
     // precondition that the sum of ids must be a multiple of 3
     def seqEnter(me: Int)(set: Set[Int]) : (Unit, Set[Int]) = {
         require(set.sum % 3 == 0)
-        idTotal += me
         ((), set.incl(me))
     }
 
     def seqExit(me: Int)(set: Set[Int]) : (Unit, Set[Int]) = {
-        idTotal -= me
         ((), set.excl(me))
     }
 
@@ -49,9 +47,9 @@ object resourceMonitorTest {
         // concurrent resource monitor object
         val concDatabase = new resourceMonitor()
         // set to store which processes are active for sequential part of test
-        val seqDatabase = new Set[Int]()
+        val seqDatabase = Set[Int]()
         val tester = LinearizabilityTester.JITGraph[Set[Int], resourceMonitor](seqDatabase, concDatabase, 5, reader _, 400)
-        assert(test() > 0)
+        assert(tester() > 0)
     }
 
     def main(args: Array[String]) = {
