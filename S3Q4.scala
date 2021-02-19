@@ -52,6 +52,61 @@ class GridMax(n: Int, xss: Array[Array[Int]]) {
     }
 }
 
+class LogGridMax(n: Int, xss: Array[Array[Int]]) {
+    require(n >= 1 && xss.length == n && xss.forall(xs =>  xs.length == n))
+
+    // channels for communication up and to the right
+    private val channels = Array.fill(n)(Array.fill(n)(ManyOneBuf[Int](1)))
+
+    // output array
+    private val outputArray = Array.fill(n)(Array.fill(n)(0))
+
+    // barrier process
+    private val barrier = new Barrier(n * n)
+
+    // pass max value to the right/up process that is gap away
+    // gap = 2^r where r is the number of barrier process
+    // (synced by barrier process)
+    // works as max value 'communicated' to every process by combining results
+    def worker(i: Int, j: Int, x: Int, read: ?[Int], write: List[List[![Int]]]) = proc {
+        // initially set the max value to x
+        var max = x; var gap = 1
+        // send to the right
+        while (gap < n) {
+            // send value to right
+            write(i)((j + gap) % n)!(max)
+            // receive value from left and update max
+            val y = read?()
+            if (y > max) max = y
+            gap = gap + gap
+            barrier.sync()
+        }
+        gap = 1
+        // send up
+        while (count < n) {
+            // send value up
+            write(i)((j + gap) % n)!(max)
+            // receive value from below and update max
+            val y = read?()
+            if (y > max) max = y
+            gap = gap + gap
+            barrier.sync()
+        }
+        // write to outputArray
+        outputArray(i)(j) = max
+    }
+
+
+    // Run the system, and return array storing results obtained.
+    def apply(): Array[Array[Int]] = {
+        // create workers
+        val workers = || (for (i <- 0 until n; j <- 0 until n) yield worker(i, j, xss(i)(j), channels(i)(j), channels))
+        run (workers)
+        outputArray
+    }
+}
+
+
 import scala.util.Random
 
 /** Test for GridMax and LogGridMax. */
@@ -61,7 +116,7 @@ object GridMaxTest{
   def doTest(useLog: Boolean) = {
     val n = 1+Random.nextInt(10)
     val xss = Array.fill[Int](n, n)(Random.nextInt(1000))
-    val results = new GridMax(n, xss)() //if(useLog) new LogGridMax(n, xss)() else new GridMax(n, xss)()
+    val results = if(useLog) new LogGridMax(n, xss)() else new GridMax(n, xss)()
     val expected = xss.map(_.max).max
     assert(results.forall(_.forall(_ == expected)))
   }
