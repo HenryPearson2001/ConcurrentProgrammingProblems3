@@ -21,7 +21,11 @@ import scala.collection.immutable.Set
 
 object resourceMonitorTest {
 
+    type SeqDatabase = Set[Int]
+    type ConcDatabase = resourceMonitor
 
+    // number of readers
+    var N = 5
 
     // functions for sequential implementation
     // precondition that the sum of ids must be a multiple of 3
@@ -34,8 +38,8 @@ object resourceMonitorTest {
         ((), set.excl(me))
     }
 
-    def reader(me: Int, log: GenericThreadLog[Set[Int], resourceMonitor]) = proc {
-        for (i <- 0 until 200) {
+    def reader(me: Int, log: GenericThreadLog[SeqDatabase, ConcDatabase]) = {
+        for (i <- 0 until 10) {
             // attempt to access the resource
             log.log(_.enter(me), "Entering", seqEnter(me))
             // attempt to exit accessing the resource
@@ -45,10 +49,10 @@ object resourceMonitorTest {
 
     def doTest = {
         // concurrent resource monitor object
-        val concDatabase = new resourceMonitor()
+        val concDatabase = new resourceMonitor
         // set to store which processes are active for sequential part of test
-        val seqDatabase = Set[Int]()
-        val tester = LinearizabilityTester.JITGraph[Set[Int], resourceMonitor](seqDatabase, concDatabase, 5, reader _, 400)
+        val seqDatabase: Set[Int] = Set()
+        val tester = LinearizabilityTester.JITGraph[SeqDatabase, ConcDatabase](seqDatabase, concDatabase, N, reader _, 20)
         assert(tester() > 0)
     }
 
